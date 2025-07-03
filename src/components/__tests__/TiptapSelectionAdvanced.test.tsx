@@ -81,6 +81,10 @@ describe("TiptapEditor - Advanced Selection Testing", () => {
    * This tests the component's response to selection events
    */
   it("should open tag dialog when valid text is selected", async () => {
+    const content = `<p>This is test content for selection.</p>`;
+
+    render(<TiptapEditor content={content} onUpdate={mockOnUpdate} />);
+
     await waitFor(() => {
       expect(screen.getByText(/Document Editor/)).toBeInTheDocument();
     });
