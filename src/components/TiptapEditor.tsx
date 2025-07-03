@@ -1,6 +1,7 @@
 "use client";
 
 import { useEditor, EditorContent } from "@tiptap/react";
+import { Mark } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import TextStyle from "@tiptap/extension-text-style";
@@ -166,8 +167,6 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
     const existingMark = state.doc.rangeHasMark(from, to, state.schema.marks.taggedSpan);
 
     let existingTagIds: string[] = [];
-    let existingStyle = "";
-    let existingTitle = "";
 
     if (existingMark) {
       // Get existing tags from the mark
@@ -177,8 +176,6 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
         .find((m) => m.type.name === "taggedSpan");
       if (mark && mark.attrs["data-tag"]) {
         existingTagIds = mark.attrs["data-tag"].split(" ").filter(Boolean);
-        existingStyle = mark.attrs["style"] || "";
-        existingTitle = mark.attrs["title"] || "";
       }
     }
 
@@ -297,11 +294,10 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
     let tr = state.tr;
     let hasChanges = false;
 
-    // First pass: collect all positions that need changes
     const changes: Array<{
       from: number;
       to: number;
-      mark: any;
+      mark: Mark;
       newTagIds: string[];
     }> = [];
 
@@ -501,7 +497,7 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
             if (!element.style.backgroundColor) {
               // Apply default styling if not already present
               const tagId = element.getAttribute("data-tag");
-              const existingTag = extractedTags.find((t) => t.id === tagId);
+              const existingTag = tags.find((t) => t.id === tagId);
               if (existingTag) {
                 const tagStyle = `background-color: ${existingTag.color}25; border-bottom: 2px solid ${existingTag.color}; border-left: 3px solid ${existingTag.color}; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
                 element.setAttribute("style", tagStyle);
@@ -511,7 +507,7 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
         }
       }, 100);
     }
-  }, [editor, content]);
+  }, [editor, content, tags]);
 
   // Effect to handle highlighting
   useEffect(() => {

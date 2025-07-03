@@ -59,12 +59,6 @@ describe("TiptapEditor - Advanced Selection Testing", () => {
     const editorElement = document.querySelector(".ProseMirror") as HTMLElement;
     expect(editorElement).toBeInTheDocument();
 
-    // Create a custom mouseup event with our mock view data
-    const mockMouseUpEvent = {
-      target: editorElement,
-      view: mockView,
-    };
-
     // Test the selection logic directly
     const { selection } = mockView.state;
     if (!selection.empty && selection.from !== selection.to) {
@@ -87,13 +81,6 @@ describe("TiptapEditor - Advanced Selection Testing", () => {
    * This tests the component's response to selection events
    */
   it("should open tag dialog when valid text is selected", async () => {
-    const content = `<p>Select this text to create a tag.</p>`;
-
-    const { container } = render(
-      <TiptapEditor content={content} onUpdate={mockOnUpdate} />
-    );
-    editorContainer = container;
-
     await waitFor(() => {
       expect(screen.getByText(/Document Editor/)).toBeInTheDocument();
     });
@@ -186,7 +173,8 @@ describe("TiptapEditor - Advanced Selection Testing", () => {
             empty: false,
           },
           doc: {
-            textBetween: (from: number, to: number) => "Mock",
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            textBetween: (_from: number, _to: number) => "Mock",
           },
         },
       },
@@ -312,6 +300,7 @@ export const TiptapSelectionTestUtils = {
   /**
    * Simulates Tiptap's mouseup handler logic
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   simulateMouseUpLogic: (view: any) => {
     const { selection } = view.state;
     if (!selection.empty && selection.from !== selection.to) {
