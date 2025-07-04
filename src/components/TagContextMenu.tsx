@@ -98,10 +98,11 @@ export function TagContextMenu({
 
   return (
     <div
-      className="tag-context-menu fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48 max-w-72"
+      className="tag-context-menu fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-48 max-w-72"
       style={{
         left: position.x,
         top: position.y,
+        zIndex: 9999,
       }}
     >
       <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100 flex items-center gap-2">
