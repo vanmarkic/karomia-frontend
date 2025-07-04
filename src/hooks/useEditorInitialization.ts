@@ -7,6 +7,7 @@ import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { TagExtension } from "@/lib/tiptap-extensions/tag-extension";
 import { TaggedSpan } from "@/lib/tiptap-extensions/tagged-span-extension";
+import { useTagTooltips } from "@/hooks/useTagTooltips";
 import {
   useTagsOnly,
   useEditorOnly,
@@ -225,6 +226,9 @@ export function useEditor({ content, onUpdate }: UseEditorProps) {
       editor.commands.setContent(content);
     }
   }, [editor, content]);
+
+  // Add tooltip functionality for tagged spans
+  useTagTooltips(editor);
 
   return { editor };
 }
