@@ -13,8 +13,6 @@ import { TaggedSpan } from "@/lib/tiptap-extensions/tagged-span-extension";
 import { TagManager } from "@/components/TagManager";
 import { TagCreationDialog } from "@/components/TagCreationDialog";
 import { TagContextMenu } from "@/components/TagContextMenu";
-import { TagDeletionDialog } from "@/components/TagDeletionDialog";
-import { BulkTagRemovalDialog } from "@/components/BulkTagRemovalDialog";
 
 interface TiptapEditorProps {
   content: string;
@@ -33,24 +31,6 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
     isOpen: false,
     position: { x: 0, y: 0 },
     taggedElement: null,
-  });
-  const [deletionDialog, setDeletionDialog] = useState<{
-    isOpen: boolean;
-    tag: Tag | null;
-    instanceCount: number;
-  }>({
-    isOpen: false,
-    tag: null,
-    instanceCount: 0,
-  });
-  const [bulkRemovalDialog, setBulkRemovalDialog] = useState<{
-    isOpen: boolean;
-    taggedElement: HTMLElement | null;
-    tagIds: string[];
-  }>({
-    isOpen: false,
-    taggedElement: null,
-    tagIds: [],
   });
 
   const editor = useEditor({
@@ -101,25 +81,12 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
           if (taggedElement) {
             event.preventDefault();
 
-            // Check if this element has multiple tags for enhanced context menu
-            const tagIds =
-              taggedElement.getAttribute("data-tag")?.split(" ").filter(Boolean) || [];
-
-            if (tagIds.length > 2) {
-              // For elements with many tags, show bulk removal dialog
-              setBulkRemovalDialog({
-                isOpen: true,
-                taggedElement,
-                tagIds,
-              });
-            } else {
-              // For elements with few tags, show standard context menu
-              setContextMenu({
-                isOpen: true,
-                position: { x: event.clientX, y: event.clientY },
-                taggedElement,
-              });
-            }
+            // Always show context menu for any tagged element
+            setContextMenu({
+              isOpen: true,
+              position: { x: event.clientX, y: event.clientY },
+              taggedElement,
+            });
             return true;
           }
           return false;
@@ -143,32 +110,19 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
                     if (tagIds.length > 0) {
                       event.preventDefault();
 
-                      // For multiple tags, show bulk removal dialog
-                      if (tagIds.length > 2) {
-                        // Find the DOM element for this position
-                        const nodePos = view.posAtCoords({ left: 0, top: 0 });
-                        if (nodePos) {
-                          const domElement = view.domAtPos(pos).node as HTMLElement;
-                          const taggedElement = domElement.closest(
-                            ".my-tag[data-tag]"
-                          ) as HTMLElement;
-                          if (taggedElement) {
-                            setBulkRemovalDialog({
-                              isOpen: true,
-                              taggedElement,
-                              tagIds,
-                            });
-                          }
-                        }
-                      } else {
-                        // For single tag or two tags, remove the first tag
-                        const elementAtPos = view.domAtPos(pos).node as HTMLElement;
-                        const taggedElement = elementAtPos.closest?.(
-                          ".my-tag[data-tag]"
-                        ) as HTMLElement;
-                        if (taggedElement) {
-                          removeTagFromTextChunk(tagIds[0], taggedElement);
-                        }
+                      // Use context menu for all tag removal operations
+                      const elementAtPos = view.domAtPos(pos).node as HTMLElement;
+                      const taggedElement = elementAtPos.closest?.(
+                        ".my-tag[data-tag]"
+                      ) as HTMLElement;
+                      if (taggedElement) {
+                        // Position context menu at current cursor position
+                        const coords = view.coordsAtPos(from);
+                        setContextMenu({
+                          isOpen: true,
+                          position: { x: coords.left, y: coords.bottom },
+                          taggedElement,
+                        });
                       }
                       return false; // Stop iteration
                     }
@@ -202,10 +156,12 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
                         ".my-tag[data-tag]"
                       ) as HTMLElement;
                       if (taggedElement) {
-                        setBulkRemovalDialog({
+                        // Position context menu at current cursor position
+                        const coords = view.coordsAtPos(from);
+                        setContextMenu({
                           isOpen: true,
+                          position: { x: coords.left, y: coords.bottom },
                           taggedElement,
-                          tagIds,
                         });
                       }
                       return false;
@@ -344,27 +300,8 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
   };
 
   const handleDeleteTag = (tagId: string) => {
-    if (!editor) return;
-
-    // Count instances of this tag in the document
-    const editorElement = editor.view.dom;
-    const instances = editorElement.querySelectorAll(`[data-tag*="${tagId}"]`);
-    const instanceCount = instances.length;
-
-    const tag = tags.find((t) => t.id === tagId);
-    if (!tag) return;
-
-    // Show confirmation dialog if there are multiple instances
-    if (instanceCount > 1) {
-      setDeletionDialog({
-        isOpen: true,
-        tag,
-        instanceCount,
-      });
-    } else {
-      // Delete immediately if only one instance or no instances
-      confirmDeleteTag(tagId);
-    }
+    // Delete tag directly without confirmation dialog
+    confirmDeleteTag(tagId);
   };
 
   const confirmDeleteTag = (tagId: string) => {
@@ -529,22 +466,6 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
         }
       }, 100);
     }
-  };
-
-  const handleBulkRemovalFromChunk = (tagIdsToRemove: string[]) => {
-    if (bulkRemovalDialog.taggedElement) {
-      // Remove multiple tags from a specific element
-      const element = bulkRemovalDialog.taggedElement;
-      tagIdsToRemove.forEach((tagId) => {
-        removeTagFromTextChunk(tagId, element);
-      });
-    }
-  };
-
-  const handleBulkRemovalFromDocument = (tagIdsToRemove: string[]) => {
-    tagIdsToRemove.forEach((tagId) => {
-      confirmDeleteTag(tagId);
-    });
   };
 
   const handleCloseContextMenu = useCallback(() => {
@@ -743,30 +664,6 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
         tags={tags}
         onRemoveTag={removeTagFromTextChunk}
         onClose={handleCloseContextMenu}
-      />
-
-      <TagDeletionDialog
-        open={deletionDialog.isOpen}
-        onOpenChange={(open) => setDeletionDialog((prev) => ({ ...prev, isOpen: open }))}
-        tag={deletionDialog.tag}
-        instanceCount={deletionDialog.instanceCount}
-        onConfirmDelete={() => {
-          if (deletionDialog.tag) {
-            confirmDeleteTag(deletionDialog.tag.id);
-          }
-        }}
-      />
-
-      <BulkTagRemovalDialog
-        open={bulkRemovalDialog.isOpen}
-        onOpenChange={(open) =>
-          setBulkRemovalDialog((prev) => ({ ...prev, isOpen: open }))
-        }
-        tags={tags}
-        selectedText={bulkRemovalDialog.taggedElement?.textContent || ""}
-        selectedTagIds={bulkRemovalDialog.tagIds}
-        onRemoveTags={handleBulkRemovalFromDocument}
-        onRemoveFromChunkOnly={handleBulkRemovalFromChunk}
       />
     </div>
   );
