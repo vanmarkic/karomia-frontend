@@ -14,6 +14,7 @@ import { TagManager } from "@/components/TagManager";
 import { TagCreationDialog } from "@/components/TagCreationDialog";
 import { TagContextMenu } from "@/components/TagContextMenu";
 import { TagDeletionDialog } from "@/components/TagDeletionDialog";
+import { BulkTagRemovalDialog } from "@/components/BulkTagRemovalDialog";
 
 interface TiptapEditorProps {
   content: string;
@@ -41,6 +42,15 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
     isOpen: false,
     tag: null,
     instanceCount: 0,
+  });
+  const [bulkRemovalDialog, setBulkRemovalDialog] = useState<{
+    isOpen: boolean;
+    taggedElement: HTMLElement | null;
+    tagIds: string[];
+  }>({
+    isOpen: false,
+    taggedElement: null,
+    tagIds: [],
   });
 
   const editor = useEditor({
@@ -90,11 +100,26 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
 
           if (taggedElement) {
             event.preventDefault();
-            setContextMenu({
-              isOpen: true,
-              position: { x: event.clientX, y: event.clientY },
-              taggedElement,
-            });
+
+            // Check if this element has multiple tags for enhanced context menu
+            const tagIds =
+              taggedElement.getAttribute("data-tag")?.split(" ").filter(Boolean) || [];
+
+            if (tagIds.length > 2) {
+              // For elements with many tags, show bulk removal dialog
+              setBulkRemovalDialog({
+                isOpen: true,
+                taggedElement,
+                tagIds,
+              });
+            } else {
+              // For elements with few tags, show standard context menu
+              setContextMenu({
+                isOpen: true,
+                position: { x: event.clientX, y: event.clientY },
+                taggedElement,
+              });
+            }
             return true;
           }
           return false;
@@ -117,8 +142,34 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
                       .filter(Boolean);
                     if (tagIds.length > 0) {
                       event.preventDefault();
-                      // Remove the first tag (or prompt user to choose which one)
-                      removeTagFromEditor(tagIds[0], pos, pos + node.nodeSize);
+
+                      // For multiple tags, show bulk removal dialog
+                      if (tagIds.length > 2) {
+                        // Find the DOM element for this position
+                        const nodePos = view.posAtCoords({ left: 0, top: 0 });
+                        if (nodePos) {
+                          const domElement = view.domAtPos(pos).node as HTMLElement;
+                          const taggedElement = domElement.closest(
+                            ".my-tag[data-tag]"
+                          ) as HTMLElement;
+                          if (taggedElement) {
+                            setBulkRemovalDialog({
+                              isOpen: true,
+                              taggedElement,
+                              tagIds,
+                            });
+                          }
+                        }
+                      } else {
+                        // For single tag or two tags, remove the first tag
+                        const elementAtPos = view.domAtPos(pos).node as HTMLElement;
+                        const taggedElement = elementAtPos.closest?.(
+                          ".my-tag[data-tag]"
+                        ) as HTMLElement;
+                        if (taggedElement) {
+                          removeTagFromTextChunk(tagIds[0], taggedElement);
+                        }
+                      }
                       return false; // Stop iteration
                     }
                   }
@@ -126,6 +177,45 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
               }
             });
           }
+
+          // Add keyboard shortcut for bulk tag removal: Ctrl/Cmd + Shift + R
+          if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === "r") {
+            const { selection } = view.state;
+            const { from, to } = selection;
+
+            // Find tagged element at current position
+            view.state.doc.descendants((node, pos) => {
+              if (pos <= from && pos + node.nodeSize >= to) {
+                if (node.marks) {
+                  const taggedSpanMark = node.marks.find(
+                    (mark) => mark.type.name === "taggedSpan"
+                  );
+                  if (taggedSpanMark && taggedSpanMark.attrs["data-tag"]) {
+                    const tagIds = taggedSpanMark.attrs["data-tag"]
+                      .split(" ")
+                      .filter(Boolean);
+                    if (tagIds.length > 1) {
+                      event.preventDefault();
+
+                      const elementAtPos = view.domAtPos(pos).node as HTMLElement;
+                      const taggedElement = elementAtPos.closest?.(
+                        ".my-tag[data-tag]"
+                      ) as HTMLElement;
+                      if (taggedElement) {
+                        setBulkRemovalDialog({
+                          isOpen: true,
+                          taggedElement,
+                          tagIds,
+                        });
+                      }
+                      return false;
+                    }
+                  }
+                }
+              }
+            });
+          }
+
           return false;
         },
       },
@@ -441,6 +531,22 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
     }
   };
 
+  const handleBulkRemovalFromChunk = (tagIdsToRemove: string[]) => {
+    if (bulkRemovalDialog.taggedElement) {
+      // Remove multiple tags from a specific element
+      const element = bulkRemovalDialog.taggedElement;
+      tagIdsToRemove.forEach((tagId) => {
+        removeTagFromTextChunk(tagId, element);
+      });
+    }
+  };
+
+  const handleBulkRemovalFromDocument = (tagIdsToRemove: string[]) => {
+    tagIdsToRemove.forEach((tagId) => {
+      confirmDeleteTag(tagId);
+    });
+  };
+
   const handleCloseContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, isOpen: false }));
   }, []);
@@ -496,18 +602,30 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
             const element = span as HTMLElement;
             if (!element.style.backgroundColor) {
               // Apply default styling if not already present
-              const tagId = element.getAttribute("data-tag");
-              const existingTag = tags.find((t) => t.id === tagId);
-              if (existingTag) {
-                const tagStyle = `background-color: ${existingTag.color}25; border-bottom: 2px solid ${existingTag.color}; border-left: 3px solid ${existingTag.color}; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
-                element.setAttribute("style", tagStyle);
-              }
+              const tagStyle = `background-color: #3B82F625; border-bottom: 2px solid #3B82F6; border-left: 3px solid #3B82F6; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
+              element.setAttribute("style", tagStyle);
             }
           });
         }
       }, 100);
     }
-  }, [editor, content, tags]);
+  }, [editor, content]);
+
+  // Separate effect to update tag styling when tags change
+  useEffect(() => {
+    if (editor && editor.view && editor.view.dom && tags.length > 0) {
+      const taggedSpans = editor.view.dom.querySelectorAll("span.my-tag[data-tag]");
+      taggedSpans.forEach((span) => {
+        const element = span as HTMLElement;
+        const tagId = element.getAttribute("data-tag");
+        const existingTag = tags.find((t) => t.id === tagId);
+        if (existingTag && !element.style.backgroundColor.includes(existingTag.color)) {
+          const tagStyle = `background-color: ${existingTag.color}25; border-bottom: 2px solid ${existingTag.color}; border-left: 3px solid ${existingTag.color}; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
+          element.setAttribute("style", tagStyle);
+        }
+      });
+    }
+  }, [editor, tags]);
 
   // Effect to handle highlighting
   useEffect(() => {
@@ -637,6 +755,18 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
             confirmDeleteTag(deletionDialog.tag.id);
           }
         }}
+      />
+
+      <BulkTagRemovalDialog
+        open={bulkRemovalDialog.isOpen}
+        onOpenChange={(open) =>
+          setBulkRemovalDialog((prev) => ({ ...prev, isOpen: open }))
+        }
+        tags={tags}
+        selectedText={bulkRemovalDialog.taggedElement?.textContent || ""}
+        selectedTagIds={bulkRemovalDialog.tagIds}
+        onRemoveTags={handleBulkRemovalFromDocument}
+        onRemoveFromChunkOnly={handleBulkRemovalFromChunk}
       />
     </div>
   );

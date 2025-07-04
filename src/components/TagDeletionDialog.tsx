@@ -40,7 +40,7 @@ export function TagDeletionDialog({
                 borderColor: tag.color 
               }}
             />
-            Delete Tag "{tag.name}"
+            Delete Tag &ldquo;{tag.name}&rdquo;
           </DialogTitle>
           <DialogDescription>
             This tag is used in {instanceCount} place{instanceCount !== 1 ? 's' : ''} in the document. 

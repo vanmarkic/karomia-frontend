@@ -1,17 +1,12 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-import { Tag } from '@/types';
+import { Tag } from "@/types";
 
 interface TagCreationDialogProps {
   open: boolean;
@@ -23,14 +18,14 @@ interface TagCreationDialogProps {
 }
 
 const PRESET_COLORS = [
-  '#3B82F6', // Blue
-  '#EF4444', // Red
-  '#10B981', // Green
-  '#F59E0B', // Yellow
-  '#8B5CF6', // Purple
-  '#EC4899', // Pink
-  '#06B6D4', // Cyan
-  '#84CC16', // Lime
+  "#3B82F6", // Blue
+  "#EF4444", // Red
+  "#10B981", // Green
+  "#F59E0B", // Yellow
+  "#8B5CF6", // Purple
+  "#EC4899", // Pink
+  "#06B6D4", // Cyan
+  "#84CC16", // Lime
 ];
 
 export function TagCreationDialog({
@@ -41,8 +36,9 @@ export function TagCreationDialog({
   selectedText,
   existingTags,
 }: TagCreationDialogProps) {
-  const [tagName, setTagName] = useState('');
+  const [tagName, setTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [focusedTagIndex, setFocusedTagIndex] = useState(-1);
 
   const handleCreate = () => {
@@ -51,13 +47,13 @@ export function TagCreationDialog({
         name: tagName.trim(),
         color: selectedColor,
       });
-      setTagName('');
+      setTagName("");
       setSelectedColor(PRESET_COLORS[0]);
     }
   };
 
   const handleClose = () => {
-    setTagName('');
+    setTagName("");
     setSelectedColor(PRESET_COLORS[0]);
     onOpenChange(false);
   };
@@ -74,7 +70,7 @@ export function TagCreationDialog({
             Choose an existing tag or create a new one for the selected text
           </p>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label className="text-sm font-medium">Selected Text</Label>
@@ -86,7 +82,9 @@ export function TagCreationDialog({
           {existingTags.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-semibold text-blue-700">Quick Tag Assignment</Label>
+                <Label className="text-sm font-semibold text-blue-700">
+                  Quick Tag Assignment
+                </Label>
                 <div className="h-px bg-blue-200 flex-1"></div>
               </div>
               <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3 bg-blue-50/50">
@@ -96,16 +94,16 @@ export function TagCreationDialog({
                     variant="ghost"
                     size="sm"
                     className={`h-auto p-3 text-left justify-start hover:bg-white hover:shadow-sm transition-all duration-200 border ${
-                      focusedTagIndex === index 
-                        ? 'border-blue-300 bg-white shadow-sm' 
-                        : 'border-transparent hover:border-gray-200'
+                      focusedTagIndex === index
+                        ? "border-blue-300 bg-white shadow-sm"
+                        : "border-transparent hover:border-gray-200"
                     }`}
                     onClick={() => {
                       onAssignExistingTag(tag.id);
                       handleClose();
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
+                      if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         onAssignExistingTag(tag.id);
                         handleClose();
@@ -117,16 +115,18 @@ export function TagCreationDialog({
                         className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
                         style={{ backgroundColor: tag.color }}
                       />
-                      <span className="text-sm font-medium text-gray-800 truncate flex-1">{tag.name}</span>
-                      <div 
+                      <span className="text-sm font-medium text-gray-800 truncate flex-1">
+                        {tag.name}
+                      </span>
+                      <div
                         className="text-xs px-2 py-1 rounded-full opacity-80"
-                        style={{ 
+                        style={{
                           backgroundColor: `${tag.color}25`,
                           color: tag.color,
-                          border: `1px solid ${tag.color}50`
+                          border: `1px solid ${tag.color}50`,
                         }}
                       >
-                        {index < 9 ? `${index + 1}` : 'Click'} to apply
+                        {index < 9 ? `${index + 1}` : "Click"} to apply
                       </div>
                     </div>
                   </Button>
@@ -138,15 +138,19 @@ export function TagCreationDialog({
           {existingTags.length > 0 && (
             <div className="border-t pt-4">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium text-gray-500">Or create a new tag</Label>
+                <Label className="text-sm font-medium text-gray-500">
+                  Or create a new tag
+                </Label>
                 <div className="h-px bg-gray-200 flex-1"></div>
               </div>
             </div>
           )}
-          
+
           {existingTags.length === 0 && (
             <div className="space-y-2">
-              <Label className="text-sm font-semibold text-green-700">Create Your First Tag</Label>
+              <Label className="text-sm font-semibold text-green-700">
+                Create Your First Tag
+              </Label>
             </div>
           )}
 
@@ -159,7 +163,7 @@ export function TagCreationDialog({
               value={tagName}
               onChange={(e) => setTagName(e.target.value)}
               placeholder="Enter tag name..."
-              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+              onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
           </div>
 
@@ -172,8 +176,8 @@ export function TagCreationDialog({
                   type="button"
                   className={`w-8 h-8 rounded-full border-2 transition-all ${
                     selectedColor === color
-                      ? 'border-gray-800 scale-110'
-                      : 'border-gray-300 hover:scale-105'
+                      ? "border-gray-800 scale-110"
+                      : "border-gray-300 hover:scale-105"
                   }`}
                   style={{ backgroundColor: color }}
                   onClick={() => setSelectedColor(color)}
@@ -193,7 +197,7 @@ export function TagCreationDialog({
                   color: selectedColor,
                 }}
               >
-                {tagName || 'Tag Preview'}
+                {tagName || "Tag Preview"}
               </span>
             </div>
           </div>
