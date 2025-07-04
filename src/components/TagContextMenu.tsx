@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useTagsOnly,
+  useContextMenuState,
+  useSetContextMenu,
+  useRemoveTagFromTextChunk,
+} from "@/stores";
 import { Check, X, Trash2, TagIcon } from "lucide-react";
 
 export function TagContextMenu() {
-  const { tags, contextMenu, setContextMenu, removeTagFromTextChunk } = useTagStore();
+  const tags = useTagsOnly();
+  const contextMenu = useContextMenuState();
+  const setContextMenu = useSetContextMenu();
+  const removeTagFromTextChunk = useRemoveTagFromTextChunk();
 
   const { isOpen, position, taggedElement } = contextMenu;
 

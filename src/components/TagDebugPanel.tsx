@@ -3,21 +3,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useTagsOnly,
+  useSelectedTextOnly,
+  useTagDialogState,
+  useContextMenuState,
+  useBulkRemovalDialogState,
+  useDeletionDialogState,
+  useSaveTags,
+  useLoadPersistedTags,
+  useClearAllData,
+  useSetTags,
+} from "@/stores";
 import { Download, Upload, Trash2, Eye } from "lucide-react";
 
 export function TagDebugPanel() {
-  const {
-    tags,
-    selectedText,
-    showTagDialog,
-    contextMenu,
-    bulkRemovalDialog,
-    deletionDialog,
-    saveTags,
-    loadPersistedTags,
-    clearAllData,
-  } = useTagStore();
+  const tags = useTagsOnly();
+  const selectedText = useSelectedTextOnly();
+  const showTagDialog = useTagDialogState();
+  const contextMenu = useContextMenuState();
+  const bulkRemovalDialog = useBulkRemovalDialogState();
+  const deletionDialog = useDeletionDialogState();
+  const saveTags = useSaveTags();
+  const loadPersistedTags = useLoadPersistedTags();
+  const clearAllData = useClearAllData();
+  const setTags = useSetTags();
 
   const exportTags = () => {
     const dataStr = JSON.stringify(tags, null, 2);
@@ -42,7 +52,7 @@ export function TagDebugPanel() {
         reader.onload = (e) => {
           try {
             const importedTags = JSON.parse(e.target?.result as string);
-            useTagStore.setState({ tags: importedTags });
+            setTags(importedTags);
           } catch (error) {
             console.error("Failed to import tags:", error);
             alert("Failed to import tags. Please check the file format.");

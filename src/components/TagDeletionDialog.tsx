@@ -9,10 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useDeletionDialogState,
+  useSetDeletionDialog,
+  useDeleteTagEntirely,
+} from "@/stores";
 
 export function TagDeletionDialog() {
-  const { deletionDialog, setDeletionDialog, deleteTagEntirely } = useTagStore();
+  const deletionDialog = useDeletionDialogState();
+  const setDeletionDialog = useSetDeletionDialog();
+  const deleteTagEntirely = useDeleteTagEntirely();
 
   const { isOpen, tag, instanceCount } = deletionDialog;
 

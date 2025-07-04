@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import TextStyle from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { TagExtension } from "@/lib/tiptap-extensions/tag-extension";
 import { TaggedSpan } from "@/lib/tiptap-extensions/tagged-span-extension";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useTagsOnly,
+  useEditorOnly,
+  useSetSelectedText,
+  useSetShowTagDialog,
+  useSetContextMenu,
+  useInitializeEditor,
+  useDestroyEditor,
+} from "@/stores";
 
 interface UseEditorProps {
   content: string;
@@ -19,17 +27,23 @@ interface UseEditorProps {
  * Handles editor creation, event handlers, and cleanup
  */
 export function useEditor({ content, onUpdate }: UseEditorProps) {
-  const {
-    tags,
-    editor,
-    setSelectedText,
-    setShowTagDialog,
-    setContextMenu,
-    initializeEditor,
-    destroyEditor,
-  } = useTagStore();
+  const tags = useTagsOnly();
+  const editor = useEditorOnly();
+  const setSelectedText = useSetSelectedText();
+  const setShowTagDialog = useSetShowTagDialog();
+  const setContextMenu = useSetContextMenu();
+  const initializeEditor = useInitializeEditor();
+  const destroyEditor = useDestroyEditor();
 
-  // Initialize editor when component mounts
+  // Stable callback to prevent unnecessary re-renders
+  const stableOnUpdate = useCallback(
+    (content: string) => {
+      onUpdate?.(content);
+    },
+    [onUpdate]
+  );
+
+  // Initialize editor when component mounts - simplified to prevent infinite loops
   useEffect(() => {
     if (!editor) {
       const editorConfig = {
@@ -52,7 +66,7 @@ export function useEditor({ content, onUpdate }: UseEditorProps) {
         editable: false,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onUpdate: ({ editor }: { editor: any }) => {
-          onUpdate?.(editor.getHTML());
+          stableOnUpdate(editor.getHTML());
         },
         editorProps: {
           attributes: {
@@ -190,12 +204,12 @@ export function useEditor({ content, onUpdate }: UseEditorProps) {
   }, [
     editor,
     initializeEditor,
-    tags,
     content,
-    onUpdate,
+    tags,
     setSelectedText,
     setShowTagDialog,
     setContextMenu,
+    stableOnUpdate,
   ]);
 
   // Cleanup on unmount

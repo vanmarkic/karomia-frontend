@@ -1,98 +1,33 @@
-"use client";
-
-import { create } from "zustand";
-import { Editor } from "@tiptap/react";
+import { StateCreator } from "zustand";
 import { Mark } from "@tiptap/pm/model";
-import { Tag, TextSelection } from "@/types";
+import { Tag } from "@/types";
 import {
   extractTagInfoFromElement,
   countTagInstances,
   generateUpdatedTagStyle,
   validateTagRemoval,
 } from "@/lib/tag-removal-utils";
-import { TagPersistenceService } from "@/services/tagPersistence";
-import { MarkdownParser } from "@/lib/markdown-parser";
-import { mockApiResponse } from "@/lib/api-data";
+import { TagDataSlice } from "./tagDataSlice";
+import { EditorSlice } from "./editorSlice";
+import { SelectionSlice } from "./selectionSlice";
+import { UISlice } from "./uiSlice";
 
-interface ContextMenuState {
-  isOpen: boolean;
-  position: { x: number; y: number };
-  taggedElement: HTMLElement | null;
-}
-
-interface BulkRemovalDialog {
-  isOpen: boolean;
-  taggedElement: HTMLElement | null;
-  tagIds: string[];
-}
-
-interface DeletionDialog {
-  isOpen: boolean;
-  tag: Tag | null;
-  instanceCount: number;
-}
-
-interface TagStore {
-  // Core state
-  tags: Tag[];
-  selectedText: TextSelection | null;
-  editor: Editor | null;
-  isInitialized: boolean;
-
-  // Content state
-  content: string;
-  isContentLoading: boolean;
-  contentError: string | null;
-
-  // UI state
-  showTagDialog: boolean;
-  contextMenu: ContextMenuState;
-  bulkRemovalDialog: BulkRemovalDialog;
-  deletionDialog: DeletionDialog;
-
-  // Actions - Core tag management
-  setTags: (tags: Tag[] | ((prev: Tag[]) => Tag[])) => void;
-  addTag: (tag: Tag) => void;
-  removeTag: (tagId: string) => void;
-  updateTag: (tagId: string, updates: Partial<Tag>) => void;
-  toggleTagHighlight: (tagId: string) => void;
-
-  // Actions - Content management
-  loadContent: () => Promise<void>;
-  setContent: (content: string) => void;
-  setContentLoading: (loading: boolean) => void;
-  setContentError: (error: string | null) => void;
-
-  // Actions - Selection and editor
-  setSelectedText: (selection: TextSelection | null) => void;
-  initializeEditor: (options: object) => Editor | null;
-  destroyEditor: () => void;
-
-  // Actions - UI state
-  setShowTagDialog: (show: boolean) => void;
-  setContextMenu: (state: Partial<ContextMenuState>) => void;
-  setBulkRemovalDialog: (state: Partial<BulkRemovalDialog>) => void;
-  setDeletionDialog: (state: Partial<DeletionDialog>) => void;
-
-  // Actions - Tag operations
+export interface TagOperationsSlice {
+  // Tag creation and assignment
   createTag: (tagData: { name: string; color: string }) => void;
   assignExistingTag: (tagId: string) => void;
   applyTagToSelection: (tag: Tag) => void;
+
+  // Tag removal operations
   removeTagFromTextChunk: (tagId: string, element: HTMLElement) => void;
   removeTagFromEditor: (tagId: string, fromPos?: number, toPos?: number) => void;
   removeTagsFromChunk: (tagIdsToRemove: string[], targetElement: HTMLElement) => boolean;
   removeTagsFromDocument: (tagIdsToRemove: string[]) => boolean;
   deleteTagEntirely: (tagId: string) => void;
 
-  // Actions - Bulk operations
+  // Bulk operations
   bulkRemoveFromChunk: (tagIdsToRemove: string[]) => void;
   bulkRemoveFromDocument: (tagIdsToRemove: string[]) => void;
-
-  // Actions - Persistence
-  loadPersistedTags: () => void;
-  initializeOnce: () => void; // Add lazy initialization method
-  saveTags: () => void;
-  clearAllData: () => void;
 
   // Utility functions
   getTagUsageInfo: (tagId: string) => { instanceCount: number; isMultipleUse: boolean };
@@ -100,148 +35,19 @@ interface TagStore {
   wouldLeaveChunkUntagged: (element: HTMLElement, tagIdsToRemove: string[]) => boolean;
 }
 
-export const useTagStore = create<TagStore>((set, get) => ({
-  // Initial state - load persisted tags immediately
-  tags: TagPersistenceService.loadTags(),
-  selectedText: null,
-  editor: null,
-  isInitialized: true,
+type AllSlices = TagDataSlice &
+  EditorSlice &
+  SelectionSlice &
+  UISlice &
+  TagOperationsSlice;
 
-  // Content state
-  content: "",
-  isContentLoading: false,
-  contentError: null,
-
-  showTagDialog: false,
-  contextMenu: {
-    isOpen: false,
-    position: { x: 0, y: 0 },
-    taggedElement: null,
-  },
-  bulkRemovalDialog: {
-    isOpen: false,
-    taggedElement: null,
-    tagIds: [],
-  },
-  deletionDialog: {
-    isOpen: false,
-    tag: null,
-    instanceCount: 0,
-  },
-
-  // Core tag management actions
-  setTags: (tags) => {
-    const newTags = typeof tags === "function" ? tags(get().tags) : tags;
-    set({ tags: newTags });
-    // Auto-save when tags change
-    TagPersistenceService.saveTags(newTags);
-  },
-
-  addTag: (tag) => {
-    const newTags = [...get().tags, tag];
-    set({ tags: newTags });
-    TagPersistenceService.saveTags(newTags);
-  },
-
-  removeTag: (tagId) => {
-    const newTags = get().tags.filter((tag) => tag.id !== tagId);
-    set({ tags: newTags });
-    TagPersistenceService.saveTags(newTags);
-  },
-
-  updateTag: (tagId, updates) => {
-    const newTags = get().tags.map((tag) =>
-      tag.id === tagId ? { ...tag, ...updates } : tag
-    );
-    set({ tags: newTags });
-    TagPersistenceService.saveTags(newTags);
-  },
-
-  toggleTagHighlight: (tagId) =>
-    set((state) => ({
-      tags: state.tags.map((tag) =>
-        tag.id === tagId ? { ...tag, isHighlighted: !tag.isHighlighted } : tag
-      ),
-    })),
-
-  // Content management actions
-  loadContent: async () => {
-    const { content } = get();
-
-    // Skip loading if content is already loaded
-    if (content.trim()) {
-      return;
-    }
-
-    set({ isContentLoading: true, contentError: null });
-
-    try {
-      const parser = new MarkdownParser();
-      const htmlContent = parser.convertToHtml(mockApiResponse.content.value);
-      const cleanedContent = parser.cleanHtmlForEditor(htmlContent);
-      set({ content: cleanedContent, isContentLoading: false });
-    } catch (error) {
-      console.error("Error loading content:", error);
-      set({
-        content: "<p>Error loading content</p>",
-        contentError: error instanceof Error ? error.message : "Unknown error",
-        isContentLoading: false,
-      });
-    }
-  },
-
-  setContent: (content) => set({ content }),
-  setContentLoading: (loading) => set({ isContentLoading: loading }),
-  setContentError: (error) => set({ contentError: error }),
-
-  // Selection and editor actions
-  setSelectedText: (selection) => set({ selectedText: selection }),
-
-  initializeEditor: (options) => {
-    const { editor: currentEditor } = get();
-
-    // Don't recreate if editor already exists
-    if (currentEditor) {
-      return currentEditor;
-    }
-
-    try {
-      const newEditor = new Editor(options);
-      set({ editor: newEditor });
-      return newEditor;
-    } catch (error) {
-      console.error("Failed to initialize editor:", error);
-      return null;
-    }
-  },
-
-  destroyEditor: () => {
-    const { editor } = get();
-    if (editor) {
-      editor.destroy();
-      set({ editor: null });
-    }
-  },
-
-  // UI state actions
-  setShowTagDialog: (show) => set({ showTagDialog: show }),
-
-  setContextMenu: (state) =>
-    set((prev) => ({
-      contextMenu: { ...prev.contextMenu, ...state },
-    })),
-
-  setBulkRemovalDialog: (state) =>
-    set((prev) => ({
-      bulkRemovalDialog: { ...prev.bulkRemovalDialog, ...state },
-    })),
-
-  setDeletionDialog: (state) =>
-    set((prev) => ({
-      deletionDialog: { ...prev.deletionDialog, ...state },
-    })),
-
-  // Tag operations
+export const createTagOperationsSlice: StateCreator<
+  AllSlices,
+  [],
+  [],
+  TagOperationsSlice
+> = (set, get) => ({
+  // Tag creation and assignment
   createTag: (tagData) => {
     const { selectedText, editor } = get();
     if (!selectedText || !editor) return;
@@ -257,10 +63,10 @@ export const useTagStore = create<TagStore>((set, get) => ({
   },
 
   assignExistingTag: (tagId) => {
-    const { selectedText, editor, tags } = get();
+    const { selectedText, editor } = get();
     if (!selectedText || !editor) return;
 
-    const existingTag = tags.find((tag) => tag.id === tagId);
+    const existingTag = get().getTagById(tagId);
     if (existingTag) {
       get().applyTagToSelection(existingTag);
     }
@@ -287,7 +93,8 @@ export const useTagStore = create<TagStore>((set, get) => ({
 
     // Don't add duplicate tags
     if (existingTagIds.includes(tag.id)) {
-      set({ selectedText: null, showTagDialog: false });
+      get().clearSelection();
+      get().setShowTagDialog(false);
       return;
     }
 
@@ -338,9 +145,11 @@ export const useTagStore = create<TagStore>((set, get) => ({
       })
       .run();
 
-    set({ selectedText: null, showTagDialog: false });
+    get().clearSelection();
+    get().setShowTagDialog(false);
   },
 
+  // Tag removal operations
   removeTagFromTextChunk: (tagId, element) => {
     const { editor } = get();
     if (!editor) return;
@@ -527,7 +336,7 @@ export const useTagStore = create<TagStore>((set, get) => ({
   },
 
   removeTagsFromDocument: (tagIdsToRemove) => {
-    const { editor, tags } = get();
+    const { editor, tags, setTags } = get();
     if (!editor) return false;
 
     const { state } = editor;
@@ -590,7 +399,7 @@ export const useTagStore = create<TagStore>((set, get) => ({
       editor.view.dispatch(tr);
 
       // Remove the tags from the sidebar
-      get().setTags((prev) => prev.filter((tag) => !tagIdsToRemove.includes(tag.id)));
+      setTags((prev) => prev.filter((tag) => !tagIdsToRemove.includes(tag.id)));
 
       // Force re-render
       setTimeout(() => {
@@ -625,30 +434,6 @@ export const useTagStore = create<TagStore>((set, get) => ({
     });
   },
 
-  // Persistence actions
-  loadPersistedTags: () => {
-    const persistedTags = TagPersistenceService.loadTags();
-    set({ tags: persistedTags });
-  },
-
-  initializeOnce: () => {
-    const { isInitialized } = get();
-    if (!isInitialized) {
-      const persistedTags = TagPersistenceService.loadTags();
-      set({ tags: persistedTags, isInitialized: true });
-    }
-  },
-
-  saveTags: () => {
-    const { tags } = get();
-    TagPersistenceService.saveTags(tags);
-  },
-
-  clearAllData: () => {
-    TagPersistenceService.clearAll();
-    set({ tags: [] });
-  },
-
   // Utility functions
   getTagUsageInfo: (tagId) => {
     const { editor } = get();
@@ -676,4 +461,4 @@ export const useTagStore = create<TagStore>((set, get) => ({
     const remainingTagIds = currentTagIds.filter((id) => !tagIdsToRemove.includes(id));
     return remainingTagIds.length === 0;
   },
-}));
+});

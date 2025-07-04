@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import { TiptapEditor } from "@/components/TiptapEditor";
-import { useTagStore } from "@/stores/tagStore";
+import { useEditorWithContent, useLoadContent } from "@/stores";
 
-export default function Home() {
-  const { content, isContentLoading, loadContent } = useTagStore();
+export default function HomePage() {
+  const { content, isContentLoading } = useEditorWithContent();
+  const loadContent = useLoadContent();
 
   useEffect(() => {
     loadContent();

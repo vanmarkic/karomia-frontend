@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useTagsOnly,
+  useBulkRemovalDialogState,
+  useSetBulkRemovalDialog,
+  useBulkRemoveFromChunk,
+  useBulkRemoveFromDocument,
+} from "@/stores";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,14 +21,13 @@ import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, Trash2, Tag as TagIcon, CheckCircle } from "lucide-react";
 
 export function BulkTagRemovalDialog() {
-  // Get state and actions from Zustand store
-  const {
-    tags,
-    bulkRemovalDialog,
-    setBulkRemovalDialog,
-    bulkRemoveFromChunk,
-    bulkRemoveFromDocument,
-  } = useTagStore();
+  // Get state and actions from optimized slices
+  const tags = useTagsOnly();
+  const bulkRemovalDialog = useBulkRemovalDialogState();
+  const setBulkRemovalDialog = useSetBulkRemovalDialog();
+  const bulkRemoveFromChunk = useBulkRemoveFromChunk();
+  const bulkRemoveFromDocument = useBulkRemoveFromDocument();
+
   const [selectedForRemoval, setSelectedForRemoval] = useState<Set<string>>(new Set());
   const [removalMode, setRemovalMode] = useState<"chunk" | "document">("chunk");
 

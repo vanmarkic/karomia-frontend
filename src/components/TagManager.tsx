@@ -1,6 +1,12 @@
 "use client";
 
-import { useTagStore } from "@/stores/tagStore";
+import { useState, useEffect } from "react";
+import {
+  useTagsOnly,
+  useToggleTagHighlight,
+  useSetDeletionDialog,
+  useGetTagUsageInfo,
+} from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +14,18 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 
 export function TagManager() {
-  const { tags, toggleTagHighlight, setDeletionDialog, getTagUsageInfo } = useTagStore();
+  // Prevent hydration mismatch by ensuring consistent server/client rendering
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  // Optimized selectors - only re-renders when specific data changes
+  const tags = useTagsOnly(); // Only re-renders when tags change
+  const toggleTagHighlight = useToggleTagHighlight(); // Stable reference
+  const setDeletionDialog = useSetDeletionDialog(); // Stable reference
+  const getTagUsageInfo = useGetTagUsageInfo(); // Stable reference
 
   const handleDelete = (tagId: string) => {
     const tag = tags.find((t) => t.id === tagId);
@@ -27,7 +44,9 @@ export function TagManager() {
         <CardTitle className="text-lg">Tags</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {tags.length === 0 ? (
+        {!isClient ? (
+          <p className="text-sm text-gray-500 text-center py-4">Loading tags...</p>
+        ) : tags.length === 0 ? (
           <p className="text-sm text-gray-500 text-center py-4">
             No tags created yet. Select text to create your first tag.
           </p>

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useTagStore } from "@/stores/tagStore";
+import {
+  useTagsOnly,
+  useTagCreationData,
+  useSetShowTagDialog,
+  useCreateTag,
+  useAssignExistingTag,
+} from "@/stores";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,14 +25,11 @@ const PRESET_COLORS = [
 ];
 
 export function TagCreationDialog() {
-  const {
-    tags: existingTags,
-    selectedText,
-    showTagDialog,
-    setShowTagDialog,
-    createTag,
-    assignExistingTag,
-  } = useTagStore();
+  const existingTags = useTagsOnly();
+  const { selectedText, showTagDialog } = useTagCreationData();
+  const setShowTagDialog = useSetShowTagDialog();
+  const createTag = useCreateTag();
+  const assignExistingTag = useAssignExistingTag();
 
   const [tagName, setTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
