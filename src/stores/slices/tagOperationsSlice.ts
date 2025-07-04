@@ -101,35 +101,56 @@ export const createTagOperationsSlice: StateCreator<
     // Combine existing tag IDs with new tag ID
     const allTagIds = [...existingTagIds, tag.id];
 
-    // Create enhanced style for multiple tags
+    // Create enhanced style for hierarchical tagging system
     let combinedStyle: string;
     let combinedTitle: string;
+    let tagClass: string;
 
     if (allTagIds.length > 1) {
-      const colors = allTagIds.map((tagId) => {
-        const existingTag = tags.find((t) => t.id === tagId);
-        return existingTag?.color || tag.color;
-      });
+      // For inner chunks with different tags - use inner-chunk styling
+      const innerTagColor = tag.color;
 
-      const gradient = `linear-gradient(45deg, ${colors
-        .map(
-          (color, index) =>
-            `${color}40 ${(index * 100) / colors.length}%, ${color}40 ${
-              ((index + 1) * 100) / colors.length
-            }%`
-        )
-        .join(", ")})`;
+      combinedStyle = `
+        --inner-tag-color: ${innerTagColor};
+        --inner-tag-bg-color: ${innerTagColor}30;
+        background-color: var(--inner-tag-bg-color);
+        border-top: 2px solid var(--inner-tag-color);
+        border-bottom: 2px solid var(--inner-tag-color);
+        margin: 0 2px;
+        border-radius: 4px;
+        box-shadow: 0 0 0 1px var(--inner-tag-color);
+        padding: 2px 4px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        z-index: 10;
+      `
+        .replace(/\s+/g, " ")
+        .trim();
 
-      combinedStyle = `background: ${gradient}; border-left: 3px solid ${
-        colors[0]
-      }; border-right: 3px solid ${
-        colors[colors.length - 1]
-      }; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
+      tagClass = "my-tag inner-chunk";
       combinedTitle = `Tagged: ${allTagIds
         .map((id) => tags.find((t) => t.id === id)?.name || "Unknown")
         .join(", ")}`;
     } else {
-      combinedStyle = `background-color: ${tag.color}25; border-bottom: 2px solid ${tag.color}; border-left: 3px solid ${tag.color}; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`;
+      // For single tags - use outer-chunk styling
+      combinedStyle = `
+        --tag-color: ${tag.color};
+        --tag-bg-color: ${tag.color}25;
+        background-color: var(--tag-bg-color);
+        border-left: 3px solid var(--tag-color);
+        border-right: 3px solid var(--tag-color);
+        margin: 0;
+        border-radius: 0;
+        padding: 2px 4px;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `
+        .replace(/\s+/g, " ")
+        .trim();
+
+      tagClass = "my-tag outer-chunk";
       combinedTitle = `Tagged: ${tag.name}`;
     }
 
@@ -139,7 +160,7 @@ export const createTagOperationsSlice: StateCreator<
       .setTextSelection({ from, to })
       .setTaggedSpan({
         "data-tag": allTagIds.join(" "),
-        class: "my-tag",
+        class: tagClass,
         style: combinedStyle,
         title: combinedTitle,
       })
@@ -232,14 +253,18 @@ export const createTagOperationsSlice: StateCreator<
       tr = tr.removeMark(from, to, mark);
 
       if (newTagIds.length > 0) {
-        const { style, title } = generateUpdatedTagStyle(newTagIds, tags);
+        const {
+          style,
+          title,
+          class: tagClass,
+        } = generateUpdatedTagStyle(newTagIds, tags);
 
         tr = tr.addMark(
           from,
           to,
           mark.type.create({
             "data-tag": newTagIds.join(" "),
-            class: "my-tag",
+            class: tagClass,
             style,
             title,
           })
@@ -305,14 +330,18 @@ export const createTagOperationsSlice: StateCreator<
         tr = tr.removeMark(targetPos, targetPos + targetSize, mark);
 
         if (remainingTagIds.length > 0) {
-          const { style, title } = generateUpdatedTagStyle(remainingTagIds, tags);
+          const {
+            style,
+            title,
+            class: tagClass,
+          } = generateUpdatedTagStyle(remainingTagIds, tags);
 
           tr = tr.addMark(
             targetPos,
             targetPos + targetSize,
             mark.type.create({
               "data-tag": remainingTagIds.join(" "),
-              class: "my-tag",
+              class: tagClass,
               style,
               title,
             })
@@ -379,14 +408,18 @@ export const createTagOperationsSlice: StateCreator<
       tr = tr.removeMark(from, to, mark);
 
       if (newTagIds.length > 0) {
-        const { style, title } = generateUpdatedTagStyle(newTagIds, tags);
+        const {
+          style,
+          title,
+          class: tagClass,
+        } = generateUpdatedTagStyle(newTagIds, tags);
 
         tr = tr.addMark(
           from,
           to,
           mark.type.create({
             "data-tag": newTagIds.join(" "),
-            class: "my-tag",
+            class: tagClass,
             style,
             title,
           })

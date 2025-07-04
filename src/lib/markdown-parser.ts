@@ -1,4 +1,4 @@
-import showdown from 'showdown';
+import showdown from "showdown";
 
 export class MarkdownParser {
   private converter: showdown.Converter;
@@ -20,16 +20,17 @@ export class MarkdownParser {
   }
 
   extractExistingTags(html: string): Array<{ id: string; text: string }> {
-    const tagRegex = /<span[^>]*class="my-tag"[^>]*data-tag="([^"]*)"[^>]*>(.*?)<\/span>/gi;
+    const tagRegex =
+      /<span[^>]*class="[^"]*my-tag[^"]*"[^>]*data-tag="([^"]*)"[^>]*>(.*?)<\/span>/gi;
     const tags: Array<{ id: string; text: string }> = [];
     let match;
 
     while ((match = tagRegex.exec(html)) !== null) {
-      const tagIds = match[1].split(' ');
-      const text = match[2].replace(/<[^>]*>/g, ''); // Remove any nested HTML
-      
-      tagIds.forEach(tagId => {
-        if (tagId && !tags.find(t => t.id === tagId)) {
+      const tagIds = match[1].split(" ");
+      const text = match[2].replace(/<[^>]*>/g, ""); // Remove any nested HTML
+
+      tagIds.forEach((tagId) => {
+        if (tagId && !tags.find((t) => t.id === tagId)) {
           tags.push({ id: tagId, text });
         }
       });
@@ -41,8 +42,8 @@ export class MarkdownParser {
   cleanHtmlForEditor(html: string): string {
     // Clean up the HTML for better Tiptap compatibility
     return html
-      .replace(/<!--[^>]*-->/g, '') // Remove HTML comments
-      .replace(/\n\s*\n/g, '\n') // Normalize line breaks
+      .replace(/<!--[^>]*-->/g, "") // Remove HTML comments
+      .replace(/\n\s*\n/g, "\n") // Normalize line breaks
       .trim();
   }
 }

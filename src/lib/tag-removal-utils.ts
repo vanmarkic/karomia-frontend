@@ -150,35 +150,39 @@ export function validateTagRemoval(
 export function generateUpdatedTagStyle(
   remainingTagIds: string[],
   tags: Tag[]
-): { style: string; title: string } {
+): { style: string; title: string; class: string } {
   if (remainingTagIds.length === 0) {
-    return { style: "", title: "" };
+    return { style: "", title: "", class: "" };
   }
 
   if (remainingTagIds.length === 1) {
     const tag = tags.find((t) => t.id === remainingTagIds[0]);
     if (tag) {
       return {
-        style: `background-color: ${tag.color}25; border-bottom: 2px solid ${tag.color}; border-left: 3px solid ${tag.color}; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease;`,
+        style: `
+          --tag-color: ${tag.color};
+          --tag-bg-color: ${tag.color}25;
+          background-color: var(--tag-bg-color);
+          border-left: 3px solid var(--tag-color);
+          border-right: 3px solid var(--tag-color);
+          margin: 0;
+          border-radius: 0;
+          padding: 2px 4px;
+          position: relative;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        `
+          .replace(/\s+/g, " ")
+          .trim(),
         title: `Tagged: ${tag.name}`,
+        class: "my-tag outer-chunk",
       };
     }
   }
 
-  // Multiple tags - gradient style
-  const colors = remainingTagIds.map((tagId) => {
-    const tag = tags.find((t) => t.id === tagId);
-    return tag?.color || "#3B82F6";
-  });
-
-  const gradientStops = colors
-    .map(
-      (color, index) =>
-        `${color}25 ${index * (100 / colors.length)}%, ${color}25 ${
-          (index + 1) * (100 / colors.length)
-        }%`
-    )
-    .join(", ");
+  // Multiple tags - use inner-chunk highlighting
+  const lastTag = tags.find((t) => t.id === remainingTagIds[remainingTagIds.length - 1]);
+  const innerTagColor = lastTag?.color || "#3B82F6";
 
   const tagNames = remainingTagIds.map((tagId) => {
     const tag = tags.find((t) => t.id === tagId);
@@ -186,13 +190,24 @@ export function generateUpdatedTagStyle(
   });
 
   return {
-    style: `background: linear-gradient(45deg, ${gradientStops}); border-bottom: 3px solid ${
-      colors[0]
-    }; border-left: 4px solid ${colors[colors.length - 1]}; border-top: 1px solid ${
-      colors[0]
-    }40; padding: 2px 4px; margin: 0 1px; border-radius: 4px; position: relative; cursor: pointer; transition: all 0.2s ease; box-shadow: inset 0 0 0 1px ${
-      colors[0]
-    }20;`,
+    style: `
+      --inner-tag-color: ${innerTagColor};
+      --inner-tag-bg-color: ${innerTagColor}30;
+      background-color: var(--inner-tag-bg-color);
+      border-top: 2px solid var(--inner-tag-color);
+      border-bottom: 2px solid var(--inner-tag-color);
+      margin: 0 2px;
+      border-radius: 4px;
+      box-shadow: 0 0 0 1px var(--inner-tag-color);
+      padding: 2px 4px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 10;
+    `
+      .replace(/\s+/g, " ")
+      .trim(),
     title: `Tagged: ${tagNames.join(", ")}`,
+    class: "my-tag inner-chunk",
   };
 }

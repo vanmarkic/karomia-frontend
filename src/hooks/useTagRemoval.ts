@@ -74,14 +74,18 @@ export function useTagRemoval({ editor, tags, setTags }: UseTagRemovalProps) {
 
             // Add new mark with remaining tags if any
             if (remainingTagIds.length > 0) {
-              const { style, title } = generateUpdatedTagStyle(remainingTagIds, tags);
+              const {
+                style,
+                title,
+                class: tagClass,
+              } = generateUpdatedTagStyle(remainingTagIds, tags);
 
               tr = tr.addMark(
                 pos,
                 pos + node.nodeSize,
                 taggedSpanMark.type.create({
                   "data-tag": remainingTagIds.join(" "),
-                  class: "my-tag",
+                  class: tagClass,
                   style,
                   title,
                 })
@@ -168,14 +172,18 @@ export function useTagRemoval({ editor, tags, setTags }: UseTagRemovalProps) {
         tr = tr.removeMark(from, to, mark);
 
         if (newTagIds.length > 0) {
-          const { style, title } = generateUpdatedTagStyle(newTagIds, tags);
+          const {
+            style,
+            title,
+            class: tagClass,
+          } = generateUpdatedTagStyle(newTagIds, tags);
 
           tr = tr.addMark(
             from,
             to,
             mark.type.create({
               "data-tag": newTagIds.join(" "),
-              class: "my-tag",
+              class: tagClass,
               style,
               title,
             })

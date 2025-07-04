@@ -142,14 +142,41 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Overlapping tag support */
-.ProseMirror .my-tag + .my-tag {
+/* New hierarchical tagging styles */
+.ProseMirror .my-tag.outer-chunk {
+  /* Outer chunk maintains continuous highlight */
+  margin: 0;
+  border-radius: 0;
+  border-left: 3px solid var(--tag-color);
+  border-right: 3px solid var(--tag-color);
+  background-color: var(--tag-bg-color);
+}
+
+.ProseMirror .my-tag.inner-chunk {
+  /* Inner chunk has distinct highlight that covers outer */
+  z-index: 10;
+  background-color: var(--inner-tag-bg-color);
+  border-top: 2px solid var(--inner-tag-color);
+  border-bottom: 2px solid var(--inner-tag-color);
+  margin: 0 2px;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px var(--inner-tag-color);
+}
+
+/* Visual continuity - remove margins between adjacent outer chunks */
+.ProseMirror .my-tag.outer-chunk + .my-tag.outer-chunk {
+  margin-left: 0;
+}
+
+/* Legacy support for existing tags */
+.ProseMirror .my-tag:not(.outer-chunk):not(.inner-chunk) {
+  /* Fallback for tags without new classes */
   margin-left: -1px;
 }
 
 /* Enhanced visual feedback for tagged text */
 .ProseMirror .my-tag::before {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -161,11 +188,12 @@
 
 /* Pulse animation for highlights */
 @keyframes pulse-highlight {
-  0%, 100% { 
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
-  50% { 
+  50% {
     opacity: 0.9;
     transform: scale(1.01);
   }
@@ -177,7 +205,8 @@
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -190,7 +219,8 @@
 }
 
 @keyframes highlight-flash {
-  0%, 100% {
+  0%,
+  100% {
     background-color: transparent;
   }
   50% {
