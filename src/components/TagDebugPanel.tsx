@@ -148,11 +148,6 @@ export function TagDebugPanel() {
                     }}
                   />
                   <span className="flex-1 truncate">{tag.name}</span>
-                  {tag.isHighlighted && (
-                    <Badge variant="outline" className="text-xs px-1 py-0">
-                      Active
-                    </Badge>
-                  )}
                 </div>
               ))}
             </div>

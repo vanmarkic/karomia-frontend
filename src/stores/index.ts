@@ -66,8 +66,6 @@ export const useSetTags = () => useBoundStore((state) => state.setTags);
 export const useAddTag = () => useBoundStore((state) => state.addTag);
 export const useRemoveTag = () => useBoundStore((state) => state.removeTag);
 export const useUpdateTag = () => useBoundStore((state) => state.updateTag);
-export const useToggleTagHighlight = () =>
-  useBoundStore((state) => state.toggleTagHighlight);
 export const useLoadPersistedTags = () =>
   useBoundStore((state) => state.loadPersistedTags);
 export const useInitializeOnce = () => useBoundStore((state) => state.initializeOnce);

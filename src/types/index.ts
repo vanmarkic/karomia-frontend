@@ -2,7 +2,6 @@ export interface Tag {
   id: string;
   name: string;
   color: string;
-  isHighlighted?: boolean;
 }
 
 export interface TaggedRange {

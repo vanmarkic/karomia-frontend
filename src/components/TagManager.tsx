@@ -1,17 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  useTagsOnly,
-  useToggleTagHighlight,
-  useSetDeletionDialog,
-  useGetTagUsageInfo,
-} from "@/stores";
+import { useTagsOnly, useSetDeletionDialog, useGetTagUsageInfo } from "@/stores";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 export function TagManager() {
   // Prevent hydration mismatch by ensuring consistent server/client rendering
@@ -23,7 +18,6 @@ export function TagManager() {
 
   // Optimized selectors - only re-renders when specific data changes
   const tags = useTagsOnly(); // Only re-renders when tags change
-  const toggleTagHighlight = useToggleTagHighlight(); // Stable reference
   const setDeletionDialog = useSetDeletionDialog(); // Stable reference
   const getTagUsageInfo = useGetTagUsageInfo(); // Stable reference
 
@@ -54,11 +48,7 @@ export function TagManager() {
           tags.map((tag) => (
             <div key={tag.id} className="space-y-2">
               <div
-                className={`flex items-center justify-between rounded-md p-2 transition-all ${
-                  tag.isHighlighted
-                    ? "bg-blue-50 border border-blue-200"
-                    : "hover:bg-gray-50"
-                }`}
+                className={`flex items-center justify-between rounded-md p-2 transition-all`}
               >
                 <div className="flex items-center gap-2">
                   <Badge
@@ -72,30 +62,8 @@ export function TagManager() {
                   >
                     {tag.name}
                   </Badge>
-                  {tag.isHighlighted && (
-                    <span className="text-xs text-blue-600 font-medium">Highlighted</span>
-                  )}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleTagHighlight(tag.id)}
-                    className={`h-7 w-7 p-0 transition-all ${
-                      tag.isHighlighted
-                        ? "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                        : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-                    }`}
-                    title={
-                      tag.isHighlighted ? "Hide highlights" : "Highlight all occurrences"
-                    }
-                  >
-                    {tag.isHighlighted ? (
-                      <Eye className="h-3 w-3" />
-                    ) : (
-                      <EyeOff className="h-3 w-3" />
-                    )}
-                  </Button>
                   <Button
                     variant="ghost"
                     size="sm"

@@ -12,7 +12,6 @@ export interface TagDataSlice {
   addTag: (tag: Tag) => void;
   removeTag: (tagId: string) => void;
   updateTag: (tagId: string, updates: Partial<Tag>) => void;
-  toggleTagHighlight: (tagId: string) => void;
   loadPersistedTags: () => void;
   initializeOnce: () => void;
   saveTags: () => void;
@@ -52,13 +51,6 @@ export const createTagDataSlice: StateCreator<TagDataSlice> = (set, get) => ({
     set({ tags: newTags });
     TagPersistenceService.saveTags(newTags);
   },
-
-  toggleTagHighlight: (tagId) =>
-    set((state) => ({
-      tags: state.tags.map((tag) =>
-        tag.id === tagId ? { ...tag, isHighlighted: !tag.isHighlighted } : tag
-      ),
-    })),
 
   loadPersistedTags: () => {
     const persistedTags = TagPersistenceService.loadTags();
