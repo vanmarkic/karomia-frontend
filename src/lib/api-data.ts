@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/types';
+import { ApiResponse } from "@/types";
 
 export const mockApiResponse: ApiResponse = {
   content: {
@@ -23,16 +23,16 @@ Additionally, Starbucks leads initiatives such as pilot projects exploring innov
 
 #### Governance and Progress Monitoring
 
-The governance structure behind <span class="my-tag" data-tag="tagId1">Starbucks' sustainability initiatives</span><span class="my-tag" data-tag="tagId1 tagId2"> includes a Global Environmental Council. </span><span class="my-tag" data-tag="tagId2">This council, comprising senior leaders</span>, ties their compensation to achieving environmental targets, while the Board of Directors' Nominating and Corporate Governance Committee provides oversight. Starbucks' reduction targets are periodically assessed to maintain alignment with international standards.
+The governance structure behind Starbucks' sustainability initiatives includes a Global Environmental Council. This council, comprising senior leaders, ties their compensation to achieving environmental targets, while the Board of Directors' Nominating and Corporate Governance Committee provides oversight. Starbucks' reduction targets are periodically assessed to maintain alignment with international standards.
 
 #### Commitment to Climate Justice
 
-Starbucks incorporates a focus on social dynamics of climate change through principles of <span class="my-tag" data-tag="tagId2">Inclusion, Resilience, and Just Transition</span>. Through initiatives like the Global Farmer Fund, Starbucks promotes sustainable and equitable growth for communities most vulnerable to climate change effects.
+Starbucks incorporates a focus on social dynamics of climate change through principles of Inclusion, Resilience, and Just Transition. Through initiatives like the Global Farmer Fund, Starbucks promotes sustainable and equitable growth for communities most vulnerable to climate change effects.
 
 #### Alignment with Global and Sectoral Pathways
 
 Starbucks aligns its strategies with both sectoral decarbonisation pathways and global benchmarks. Participation in initiatives such as Transform to Net Zero illustrates Starbucks' resolve towards achieving a net zero global economy by 2050. The company adopts existing guidelines and scenarios into its climate strategies to address sectoral challenges effectively.
 
-`
-  }
+`,
+  },
 };
