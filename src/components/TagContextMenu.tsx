@@ -241,7 +241,7 @@ export function TagContextMenu({
       <div className="border-t border-gray-100 my-1" />
       <div className="px-3 py-1 text-xs text-gray-400 space-y-1">
         <div className="flex items-center gap-1">
-          <span>💡 Press Delete key for quick removal</span>
+          <span>💡 Click on tags to access removal options</span>
         </div>
         <div className="flex items-center gap-1">
           <span>⌘⇧R for bulk removal dialog</span>

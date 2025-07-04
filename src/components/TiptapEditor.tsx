@@ -94,7 +94,7 @@ export function TiptapEditor({ content, onUpdate }: TiptapEditorProps) {
           }
           return false;
         },
-        contextmenu: (view, event) => {
+        click: (view, event) => {
           const target = event.target as HTMLElement;
           const taggedElement = target.closest(".my-tag[data-tag]") as HTMLElement;
 

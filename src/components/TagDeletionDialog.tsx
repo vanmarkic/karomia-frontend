@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Dialog,
@@ -35,24 +35,21 @@ export function TagDeletionDialog({
           <DialogTitle className="flex items-center gap-2">
             <div
               className="w-4 h-4 rounded-full border"
-              style={{ 
+              style={{
                 backgroundColor: `${tag.color}20`,
-                borderColor: tag.color 
+                borderColor: tag.color,
               }}
             />
             Delete Tag &ldquo;{tag.name}&rdquo;
           </DialogTitle>
           <DialogDescription>
-            This tag is used in {instanceCount} place{instanceCount !== 1 ? 's' : ''} in the document. 
-            Deleting it will remove all instances and cannot be undone.
+            This tag is used in {instanceCount} place{instanceCount !== 1 ? "s" : ""} in
+            the document. Deleting it will remove all instances and cannot be undone.
           </DialogDescription>
         </DialogHeader>
-        
+
         <DialogFooter className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button
