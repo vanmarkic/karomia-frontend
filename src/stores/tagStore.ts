@@ -11,6 +11,8 @@ import {
   validateTagRemoval,
 } from "@/lib/tag-removal-utils";
 import { TagPersistenceService } from "@/services/tagPersistence";
+import { MarkdownParser } from "@/lib/markdown-parser";
+import { mockApiResponse } from "@/lib/api-data";
 
 interface ContextMenuState {
   isOpen: boolean;
@@ -35,6 +37,12 @@ interface TagStore {
   tags: Tag[];
   selectedText: TextSelection | null;
   editor: Editor | null;
+  isInitialized: boolean;
+
+  // Content state
+  content: string;
+  isContentLoading: boolean;
+  contentError: string | null;
 
   // UI state
   showTagDialog: boolean;
@@ -49,9 +57,16 @@ interface TagStore {
   updateTag: (tagId: string, updates: Partial<Tag>) => void;
   toggleTagHighlight: (tagId: string) => void;
 
+  // Actions - Content management
+  loadContent: () => Promise<void>;
+  setContent: (content: string) => void;
+  setContentLoading: (loading: boolean) => void;
+  setContentError: (error: string | null) => void;
+
   // Actions - Selection and editor
   setSelectedText: (selection: TextSelection | null) => void;
-  setEditor: (editor: Editor | null) => void;
+  initializeEditor: (options: object) => Editor | null;
+  destroyEditor: () => void;
 
   // Actions - UI state
   setShowTagDialog: (show: boolean) => void;
@@ -75,6 +90,7 @@ interface TagStore {
 
   // Actions - Persistence
   loadPersistedTags: () => void;
+  initializeOnce: () => void; // Add lazy initialization method
   saveTags: () => void;
   clearAllData: () => void;
 
@@ -85,10 +101,17 @@ interface TagStore {
 }
 
 export const useTagStore = create<TagStore>((set, get) => ({
-  // Initial state
-  tags: [],
+  // Initial state - load persisted tags immediately
+  tags: TagPersistenceService.loadTags(),
   selectedText: null,
   editor: null,
+  isInitialized: true,
+
+  // Content state
+  content: "",
+  isContentLoading: false,
+  contentError: null,
+
   showTagDialog: false,
   contextMenu: {
     isOpen: false,
@@ -141,9 +164,64 @@ export const useTagStore = create<TagStore>((set, get) => ({
       ),
     })),
 
+  // Content management actions
+  loadContent: async () => {
+    const { content } = get();
+
+    // Skip loading if content is already loaded
+    if (content.trim()) {
+      return;
+    }
+
+    set({ isContentLoading: true, contentError: null });
+
+    try {
+      const parser = new MarkdownParser();
+      const htmlContent = parser.convertToHtml(mockApiResponse.content.value);
+      const cleanedContent = parser.cleanHtmlForEditor(htmlContent);
+      set({ content: cleanedContent, isContentLoading: false });
+    } catch (error) {
+      console.error("Error loading content:", error);
+      set({
+        content: "<p>Error loading content</p>",
+        contentError: error instanceof Error ? error.message : "Unknown error",
+        isContentLoading: false,
+      });
+    }
+  },
+
+  setContent: (content) => set({ content }),
+  setContentLoading: (loading) => set({ isContentLoading: loading }),
+  setContentError: (error) => set({ contentError: error }),
+
   // Selection and editor actions
   setSelectedText: (selection) => set({ selectedText: selection }),
-  setEditor: (editor) => set({ editor }),
+
+  initializeEditor: (options) => {
+    const { editor: currentEditor } = get();
+
+    // Don't recreate if editor already exists
+    if (currentEditor) {
+      return currentEditor;
+    }
+
+    try {
+      const newEditor = new Editor(options);
+      set({ editor: newEditor });
+      return newEditor;
+    } catch (error) {
+      console.error("Failed to initialize editor:", error);
+      return null;
+    }
+  },
+
+  destroyEditor: () => {
+    const { editor } = get();
+    if (editor) {
+      editor.destroy();
+      set({ editor: null });
+    }
+  },
 
   // UI state actions
   setShowTagDialog: (show) => set({ showTagDialog: show }),
@@ -551,6 +629,14 @@ export const useTagStore = create<TagStore>((set, get) => ({
   loadPersistedTags: () => {
     const persistedTags = TagPersistenceService.loadTags();
     set({ tags: persistedTags });
+  },
+
+  initializeOnce: () => {
+    const { isInitialized } = get();
+    if (!isInitialized) {
+      const persistedTags = TagPersistenceService.loadTags();
+      set({ tags: persistedTags, isInitialized: true });
+    }
   },
 
   saveTags: () => {

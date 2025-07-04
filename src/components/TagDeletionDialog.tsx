@@ -9,27 +9,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/types";
+import { useTagStore } from "@/stores/tagStore";
 
-interface TagDeletionDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  tag: Tag | null;
-  instanceCount: number;
-  onConfirmDelete: () => void;
-}
+export function TagDeletionDialog() {
+  const { deletionDialog, setDeletionDialog, deleteTagEntirely } = useTagStore();
 
-export function TagDeletionDialog({
-  open,
-  onOpenChange,
-  tag,
-  instanceCount,
-  onConfirmDelete,
-}: TagDeletionDialogProps) {
+  const { isOpen, tag, instanceCount } = deletionDialog;
+
+  const handleConfirmDelete = () => {
+    if (tag) {
+      deleteTagEntirely(tag.id);
+      setDeletionDialog({ isOpen: false });
+    }
+  };
+
+  const handleClose = () => {
+    setDeletionDialog({ isOpen: false });
+  };
   if (!tag) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -49,16 +49,10 @@ export function TagDeletionDialog({
         </DialogHeader>
 
         <DialogFooter className="flex gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => {
-              onConfirmDelete();
-              onOpenChange(false);
-            }}
-          >
+          <Button variant="destructive" onClick={handleConfirmDelete}>
             Delete Tag
           </Button>
         </DialogFooter>

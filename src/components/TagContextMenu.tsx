@@ -1,31 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Tag } from "@/types";
+import { useEffect, useState, useCallback } from "react";
+import { useTagStore } from "@/stores/tagStore";
 import { Check, X, Trash2, TagIcon } from "lucide-react";
 
-interface TagContextMenuProps {
-  isOpen: boolean;
-  position: { x: number; y: number };
-  taggedElement: HTMLElement | null;
-  tags: Tag[];
-  onRemoveTag: (tagId: string, element: HTMLElement) => void;
-  onClose: () => void;
-}
+export function TagContextMenu() {
+  const { tags, contextMenu, setContextMenu, removeTagFromTextChunk } = useTagStore();
 
-export function TagContextMenu({
-  isOpen,
-  position,
-  taggedElement,
-  tags,
-  onRemoveTag,
-  onClose,
-}: TagContextMenuProps) {
+  const { isOpen, position, taggedElement } = contextMenu;
+
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [selectedTagsToRemove, setSelectedTagsToRemove] = useState<Set<string>>(
     new Set()
   );
   const [showBatchMode, setShowBatchMode] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setContextMenu({ isOpen: false });
+  }, [setContextMenu]);
 
   useEffect(() => {
     if (taggedElement) {
@@ -43,13 +35,13 @@ export function TagContextMenu({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       if (!target.closest(".tag-context-menu")) {
-        onClose();
+        handleClose();
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        handleClose();
       }
     };
 
@@ -62,7 +54,7 @@ export function TagContextMenu({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   const handleToggleTagSelection = (tagId: string) => {
     const newSelected = new Set(selectedTagsToRemove);
@@ -77,9 +69,9 @@ export function TagContextMenu({
   const handleRemoveSelectedTags = () => {
     if (taggedElement) {
       selectedTagsToRemove.forEach((tagId) => {
-        onRemoveTag(tagId, taggedElement);
+        removeTagFromTextChunk(tagId, taggedElement);
       });
-      onClose();
+      handleClose();
     }
   };
 
@@ -89,6 +81,20 @@ export function TagContextMenu({
 
   const handleDeselectAllTags = () => {
     setSelectedTagsToRemove(new Set());
+  };
+
+  const handleSingleTagRemoval = (tagId: string) => {
+    if (taggedElement) {
+      removeTagFromTextChunk(tagId, taggedElement);
+      handleClose();
+    }
+  };
+
+  const handleRemoveAllTags = () => {
+    if (taggedElement) {
+      relevantTags.forEach((tag) => removeTagFromTextChunk(tag.id, taggedElement));
+      handleClose();
+    }
   };
 
   if (!isOpen || !taggedElement) return null;
@@ -124,12 +130,7 @@ export function TagContextMenu({
                 <button
                   key={tag.id}
                   className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 group"
-                  onClick={() => {
-                    if (taggedElement) {
-                      onRemoveTag(tag.id, taggedElement);
-                      onClose();
-                    }
-                  }}
+                  onClick={() => handleSingleTagRemoval(tag.id)}
                 >
                   <div
                     className="w-3 h-3 rounded-full border flex-shrink-0"
@@ -155,12 +156,7 @@ export function TagContextMenu({
                   </button>
                   <button
                     className="w-full px-3 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                    onClick={() => {
-                      if (taggedElement) {
-                        relevantTags.forEach((tag) => onRemoveTag(tag.id, taggedElement));
-                        onClose();
-                      }
-                    }}
+                    onClick={handleRemoveAllTags}
                   >
                     <Trash2 className="h-3 w-3" />
                     Remove all tags

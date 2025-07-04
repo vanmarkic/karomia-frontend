@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Tag } from "@/types";
+import { useTagStore } from "@/stores/tagStore";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -14,30 +14,25 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { AlertTriangle, Trash2, Tag as TagIcon, CheckCircle } from "lucide-react";
 
-interface BulkTagRemovalDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  tags: Tag[];
-  selectedText: string;
-  selectedTagIds: string[];
-  onRemoveTags: (tagIds: string[]) => void;
-  onRemoveFromChunkOnly?: (tagIds: string[]) => void;
-}
-
-export function BulkTagRemovalDialog({
-  open,
-  onOpenChange,
-  tags,
-  selectedText,
-  selectedTagIds,
-  onRemoveTags,
-  onRemoveFromChunkOnly,
-}: BulkTagRemovalDialogProps) {
+export function BulkTagRemovalDialog() {
+  // Get state and actions from Zustand store
+  const {
+    tags,
+    bulkRemovalDialog,
+    setBulkRemovalDialog,
+    bulkRemoveFromChunk,
+    bulkRemoveFromDocument,
+  } = useTagStore();
   const [selectedForRemoval, setSelectedForRemoval] = useState<Set<string>>(new Set());
   const [removalMode, setRemovalMode] = useState<"chunk" | "document">("chunk");
 
+  // Extract relevant data from bulkRemovalDialog state
+  const { isOpen, taggedElement, tagIds: selectedTagIds } = bulkRemovalDialog;
   const relevantTags = tags.filter((tag) => selectedTagIds.includes(tag.id));
   const hasMultipleTags = relevantTags.length > 1;
+
+  // Get selected text from taggedElement if available
+  const selectedText = taggedElement?.textContent || "";
 
   const handleToggleTag = (tagId: string) => {
     const newSelected = new Set(selectedForRemoval);
@@ -60,26 +55,26 @@ export function BulkTagRemovalDialog({
   const handleConfirmRemoval = () => {
     const tagsToRemove = Array.from(selectedForRemoval);
 
-    if (removalMode === "chunk" && onRemoveFromChunkOnly) {
-      onRemoveFromChunkOnly(tagsToRemove);
+    if (removalMode === "chunk") {
+      bulkRemoveFromChunk(tagsToRemove);
     } else {
-      onRemoveTags(tagsToRemove);
+      bulkRemoveFromDocument(tagsToRemove);
     }
 
     // Reset state
     setSelectedForRemoval(new Set());
-    onOpenChange(false);
+    setBulkRemovalDialog({ isOpen: false });
   };
 
   const handleClose = () => {
     setSelectedForRemoval(new Set());
-    onOpenChange(false);
+    setBulkRemovalDialog({ isOpen: false });
   };
 
   const willRemoveAllTags = selectedForRemoval.size === selectedTagIds.length;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

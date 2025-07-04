@@ -1,21 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTagStore } from "@/stores/tagStore";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { Tag } from "@/types";
-
-interface TagCreationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreateTag: (tag: { name: string; color: string }) => void;
-  onAssignExistingTag: (tagId: string) => void;
-  selectedText: string;
-  existingTags: Tag[];
-}
 
 const PRESET_COLORS = [
   "#3B82F6", // Blue
@@ -28,22 +18,26 @@ const PRESET_COLORS = [
   "#84CC16", // Lime
 ];
 
-export function TagCreationDialog({
-  open,
-  onOpenChange,
-  onCreateTag,
-  onAssignExistingTag,
-  selectedText,
-  existingTags,
-}: TagCreationDialogProps) {
+export function TagCreationDialog() {
+  const {
+    tags: existingTags,
+    selectedText,
+    showTagDialog,
+    setShowTagDialog,
+    createTag,
+    assignExistingTag,
+  } = useTagStore();
+
   const [tagName, setTagName] = useState("");
   const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [focusedTagIndex, setFocusedTagIndex] = useState(-1);
 
+  const selectedTextValue = selectedText?.text || "";
+
   const handleCreate = () => {
     if (tagName.trim()) {
-      onCreateTag({
+      createTag({
         name: tagName.trim(),
         color: selectedColor,
       });
@@ -55,11 +49,11 @@ export function TagCreationDialog({
   const handleClose = () => {
     setTagName("");
     setSelectedColor(PRESET_COLORS[0]);
-    onOpenChange(false);
+    setShowTagDialog(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={showTagDialog} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -75,7 +69,7 @@ export function TagCreationDialog({
           <div className="space-y-2">
             <Label className="text-sm font-medium">Selected Text</Label>
             <div className="p-3 bg-gray-50 rounded-md text-sm max-h-20 overflow-y-auto">
-              &ldquo;{selectedText}&rdquo;
+              &ldquo;{selectedTextValue}&rdquo;
             </div>
           </div>
 
@@ -99,13 +93,13 @@ export function TagCreationDialog({
                         : "border-transparent hover:border-gray-200"
                     }`}
                     onClick={() => {
-                      onAssignExistingTag(tag.id);
+                      assignExistingTag(tag.id);
                       handleClose();
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        onAssignExistingTag(tag.id);
+                        assignExistingTag(tag.id);
                         handleClose();
                       }
                     }}
