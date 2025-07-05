@@ -78,18 +78,27 @@ export const createTagOperationsSlice: StateCreator<
 
     const { from, to } = selectedText;
     const { state } = editor;
-    const existingMark = state.doc.rangeHasMark(from, to, state.schema.marks.taggedSpan);
 
+    // Get existing marks in the selection range
     let existingTagIds: string[] = [];
-    if (existingMark) {
-      const mark = state.doc
-        .resolve(from)
-        .marks()
-        .find((m) => m.type.name === "taggedSpan");
-      if (mark && mark.attrs["data-tag"]) {
-        existingTagIds = mark.attrs["data-tag"].split(" ").filter(Boolean);
+
+    // Check for existing taggedSpan marks in the selection
+    state.doc.nodesBetween(from, to, (node) => {
+      if (node.marks) {
+        node.marks.forEach((mark) => {
+          if (mark.type.name === "taggedSpan" && mark.attrs["data-tag"]) {
+            const markTagIds = mark.attrs["data-tag"].split(" ").filter(Boolean);
+            existingTagIds = [...new Set([...existingTagIds, ...markTagIds])];
+          }
+        });
       }
-    }
+    });
+
+    console.log("Existing tag IDs found:", existingTagIds);
+    console.log("Adding new tag:", tag.id);
+
+    console.log("Existing tag IDs found:", existingTagIds);
+    console.log("Adding new tag:", tag.id);
 
     // Don't add duplicate tags
     if (existingTagIds.includes(tag.id)) {
@@ -100,6 +109,8 @@ export const createTagOperationsSlice: StateCreator<
 
     // Combine existing tag IDs with new tag ID
     const allTagIds = [...existingTagIds, tag.id];
+    console.log("All tag IDs after combining:", allTagIds);
+    console.log("All tag IDs after combining:", allTagIds);
 
     // Create enhanced style for hierarchical tagging system
     let combinedStyle: string;
@@ -154,10 +165,13 @@ export const createTagOperationsSlice: StateCreator<
       combinedTitle = `Tagged: ${tag.name}`;
     }
 
+    // First, remove any existing taggedSpan marks in the selection
+    // Then apply the new combined mark
     editor
       .chain()
       .focus()
       .setTextSelection({ from, to })
+      .unsetTaggedSpan() // Remove existing marks first
       .setTaggedSpan({
         "data-tag": allTagIds.join(" "),
         class: tagClass,

@@ -64,7 +64,7 @@ export function useEditor({ content, onUpdate }: UseEditorProps) {
           }),
         ],
         content,
-        editable: false,
+        editable: true, // Changed from false to true to enable interactions
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onUpdate: ({ editor }: { editor: any }) => {
           stableOnUpdate(editor.getHTML());

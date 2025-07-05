@@ -13,19 +13,17 @@ interface TagTooltipProps {
 
 export function TagTooltip({ tagIds, children }: TagTooltipProps) {
   const allTags = useTagsOnly();
-  
+
   // Filter tags that match the provided tag IDs
   const relevantTags = allTags.filter((tag) => tagIds.includes(tag.id));
-  
+
   if (relevantTags.length === 0) {
     return <>{children}</>;
   }
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        {children}
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <div className="space-y-2">
           <div className="text-xs font-medium text-muted-foreground">

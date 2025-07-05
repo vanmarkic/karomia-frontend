@@ -26,13 +26,15 @@ export function useTagTooltips(editor: Editor | null) {
         padding: 8px 12px;
         border-radius: 6px;
         font-size: 12px;
-        max-width: 250px;
+        max-width: 280px;
+        min-width: 120px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         pointer-events: none;
         opacity: 0;
         transition: opacity 0.2s ease;
         backdrop-filter: blur(8px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        word-wrap: break-word;
       `;
 
       // Add arrow element
@@ -50,13 +52,14 @@ export function useTagTooltips(editor: Editor | null) {
       `;
 
       const header = document.createElement("div");
-      header.textContent = tags.length === 1 ? "Tag:" : "Tags:";
+      header.textContent = tags.length === 1 ? "Tag:" : `Tags (${tags.length}):`;
       header.style.cssText = `
         font-weight: 500;
         opacity: 0.8;
         font-size: 10px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-bottom: 2px;
       `;
       content.appendChild(header);
 
@@ -65,6 +68,8 @@ export function useTagTooltips(editor: Editor | null) {
         display: flex;
         flex-wrap: wrap;
         gap: 4px;
+        max-width: 240px;
+        align-items: flex-start;
       `;
 
       tags.forEach((tag) => {
@@ -72,13 +77,15 @@ export function useTagTooltips(editor: Editor | null) {
         tagBadge.textContent = tag.name;
         tagBadge.style.cssText = `
           display: inline-block;
-          padding: 2px 6px;
-          border-radius: 3px;
+          padding: 3px 7px;
+          border-radius: 4px;
           font-size: 11px;
           font-weight: 500;
           background-color: ${tag.color}20;
           border: 1px solid ${tag.color}40;
           color: ${tag.color};
+          white-space: nowrap;
+          line-height: 1.2;
         `;
         tagsContainer.appendChild(tagBadge);
       });
@@ -93,8 +100,8 @@ export function useTagTooltips(editor: Editor | null) {
     const positionTooltip = (tooltip: HTMLElement, targetElement: HTMLElement) => {
       const targetRect = targetElement.getBoundingClientRect();
       const tooltipRect = tooltip.getBoundingClientRect();
-      
-      let left = targetRect.left + (targetRect.width / 2) - (tooltipRect.width / 2);
+
+      let left = targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
       let top = targetRect.top - tooltipRect.height - 12; // Extra space for arrow
       let arrowPosition = "bottom";
 
@@ -153,18 +160,21 @@ export function useTagTooltips(editor: Editor | null) {
       }
 
       // If tooltip is already showing for the same element, don't recreate
-      if (activeTooltip && activeTooltip.dataset.elementId === element.getAttribute("data-tag")) {
+      if (
+        activeTooltip &&
+        activeTooltip.dataset.elementId === element.getAttribute("data-tag")
+      ) {
         return;
       }
 
       hideTooltip();
-      
+
       // Add small delay to prevent flickering
       showTimeout = setTimeout(() => {
         activeTooltip = createTooltip(tags);
         activeTooltip.dataset.elementId = element.getAttribute("data-tag") || "";
         positionTooltip(activeTooltip, element);
-        
+
         // Small delay for smooth transition
         setTimeout(() => {
           if (activeTooltip) {
@@ -195,13 +205,13 @@ export function useTagTooltips(editor: Editor | null) {
     const handleMouseEnter = (event: Event) => {
       const target = event.target as HTMLElement;
       const taggedElement = target.closest(".my-tag[data-tag]") as HTMLElement;
-      
+
       if (taggedElement) {
         const dataTag = taggedElement.getAttribute("data-tag");
         if (dataTag) {
           const tagIds = dataTag.split(" ").filter(Boolean);
           const relevantTags = allTags.filter((tag) => tagIds.includes(tag.id));
-          
+
           if (relevantTags.length > 0) {
             showTooltip(taggedElement, relevantTags);
           }
@@ -212,7 +222,7 @@ export function useTagTooltips(editor: Editor | null) {
     const handleMouseLeave = (event: Event) => {
       const target = event.target as HTMLElement;
       const taggedElement = target.closest(".my-tag[data-tag]");
-      
+
       if (taggedElement) {
         hideTooltip();
       }
