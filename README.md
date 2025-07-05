@@ -2,6 +2,8 @@
 
 A sophisticated text tagging system built with Next.js and Tiptap that allows users to highlight and tag arbitrary text ranges within documents, designed for sustainability report management.
 
+## Test here : https://vanmarkic.github.io/karomia-frontend/
+
 ## 🌟 Features
 
 ### Core Functionality
